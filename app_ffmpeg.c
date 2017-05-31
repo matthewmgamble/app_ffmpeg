@@ -45,7 +45,7 @@
 #include "asterisk/format_cache.h"
 
 #define LOCAL_FFMPG "/usr/local/bin/ffmpeg"
-
+#define FFMPG "/usr/bin/ffmpeg"
 
 /*** DOCUMENTATION
 	<application name="FFPlayer" language="en_US">
@@ -59,10 +59,10 @@
 			</parameter>
 		</syntax>
 		<description>
-			<para>Executes ffmpeg (currently hardcoded to /usr/local/bin/ffmpeg) to play the given location, which typically would be a mp3 or acc filename.
-			Example usage would be
-			exten => 1234,1,FFPlayer(/var/lib/asterisk/myfile.aac)
-      
+			<para>Executes mpg123 to play the given location, which typically would be a mp3 filename
+			or m3u playlist filename or a URL. Please read http://en.wikipedia.org/wiki/M3U
+			to see how M3U playlist file format is like, Example usage would be
+			exten => 1234,1,MP3Player(/var/lib/asterisk/playlist.m3u)
 			User can exit by pressing any key on the dialpad, or by hanging up.</para>
 			<para>This application does not automatically answer and should be preceeded by an
 			application such as Answer() or Progress().</para>
@@ -97,7 +97,7 @@ static int ffplay(const char *filename, unsigned int sampling_rate, int fd)
 		/* Most commonly installed in /usr/local/bin */
 	    
 /* Was pipe:1 */
-	 execl(LOCAL_FFMPG, "ffmpeg", "-i", filename, "-ar", "8000", "-ac", "1", "-acodec", "pcm_s16le", "-f", "s16le", "-bufsize", "64k", "pipe:1", (char *)NULL);
+	 execl(LOCAL_FFMPG, "ffmpeg", "-i", filename, "-ar", sampling_rate_str, "-ac", "1", "-acodec", "pcm_s16le", "-f", "s16le", "-bufsize", "64k", "pipe:1", (char *)NULL);
 	/* Can't use ast_log since FD's are closed */
 	 ast_log(LOG_NOTICE,"Execute of ffmpeg failed\n");
 
@@ -172,7 +172,6 @@ static int ff_exec(struct ast_channel *chan, const char *data)
 	myf.f.delivery.tv_sec = 0;
 	myf.f.delivery.tv_usec = 0;
 	myf.f.data.ptr = myf.frdata;
-	
 	res = ffplay(data, sampling_rate, fds[1]);
 	if (!strncasecmp(data, "http://", 7)) {
 		timeout = 10000;
